@@ -14,17 +14,10 @@ import sys
 
 
 
-def get(args):
-    if args.end_date - args.start_date < datetime.timedelta(days=90):
-        a = True
-        # The API returns daily data (00:00 UTC)
-        extended_date = args.end_date + datetime.timedelta(days=90)
-    return args.response
     
 def volume(volumes):
         max_volume = max(x for x in volumes[1]) #highest volume
         timestamp = [x for x in volumes if x == max_volume] # find the timestamp
-
         return timestamp, max_volume  
 
 def profits(prices):
@@ -41,14 +34,13 @@ def profits(prices):
                         "difference": diff
                     })
     
-        max_diff = max(x['difference'] for x in profitsellandbuy)
-        return  [x for x in profitsellandbuy if x['difference'] == max_diff][0]
-    
         try:
-            
-            return [x for x in profitsellandbuy if x['difference'] == max_diff][0]
-        except ValueError: #shouldn't buy
+            max_diff = max(x['difference'] for x in profitsellandbuy)
+            return  [x for x in profitsellandbuy if x['difference'] == max_diff][0]
+        except ValueError: 
             return None
+
+
 def trend(prices):
         decrease = []
         temp = 0
@@ -106,8 +98,7 @@ def main(args):
             profit['sell'] / 1000).date()
         print(f"Buy {args.currency.title()} on {buy_date} and sell on {sell_date} to maximize profits.")
     else:
-        print(
-            f"You shouldn't buy or sell {args.currency.title()} on the selected time period.")
+        print(f"You shouldn't buy or sell {args.currency.title()} on the selected time range.")
     
 if __name__ == '__main__':
     
