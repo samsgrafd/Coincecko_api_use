@@ -8,3 +8,5 @@ json,
 requests,
 datetime and 
 argparse
+
+Python version used: 3.9.7
