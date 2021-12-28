@@ -13,7 +13,10 @@ import sys
 
 
 
-
+def checkdate(args):
+    if args.end_date < args.start_date:
+        print("Parameter 'end_date' is before 'start_date'. Check your arguments and try again.")
+        exit()
     
 def volume(volumes):
         max_volume = max(x for x in volumes[1]) #highest volume
@@ -59,12 +62,20 @@ def trend(prices):
                               
 
 def main(args):
+    checkdate(args)
     a = False
     # check if time range is more than 90 days
     if args.end_date - args.start_date < timedelta(days=90):
         a = True
         # extented date
         extended_date = args.end_date + timedelta(days=90)
+    # get data
+    try:
+        url = f'https://api.coingecko.com/api/v3/coins/{args.currency.lower()}/market_chart/range?vs_currency=eur&from={args.start_date.timestamp()}&to={extended_date.timestamp() if a else args.end_date.timestamp()}'
+        r = requests.get(url)
+        data = json.loads(r.text)
+    except requests.exceptions.RequestException as ex:
+        raise SystemExit(ex)
     try:  # relavancies from data
         if a:
             end = (extended_date-args.start_date).days - 90 + 1
@@ -76,13 +87,6 @@ def main(args):
     except KeyError:
         print('There is no prices available for currency.')
 
-    # get data
-    try:
-        url = f'https://api.coingecko.com/api/v3/coins/{args.currency.lower()}/market_chart/range?vs_currency=eur&from={args.start_date.timestamp()}&to={extended_date.timestamp() if a else args.end_date.timestamp()}'
-        r = requests.get(url)
-        data = json.loads(r.text)
-    except requests.exceptions.RequestException as ex:
-        raise SystemExit(ex)
     #if start date is after current date
     dt_utc = datetime.now(timezone.utc).timestamp()
     dt_start = args.start_date.timestamp()
