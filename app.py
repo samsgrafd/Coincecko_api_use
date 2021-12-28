@@ -65,14 +65,6 @@ def main(args):
         a = True
         # extented date
         extended_date = args.end_date + timedelta(days=90)
-
-    try:
-        url = f'https://api.coingecko.com/api/v3/coins/{args.currency.lower()}/market_chart/range?vs_currency=eur&from={args.start_date.timestamp()}&to={extended_date.timestamp() if a else args.end_date.timestamp()}'
-        r = requests.get(url)
-        data = json.loads(r.text)
-    except requests.exceptions.RequestException as ex:
-        raise SystemExit(ex)
-    
     try:  # relavancies from data
         if a:
             end = (extended_date-args.start_date).days - 90 + 1
@@ -83,22 +75,42 @@ def main(args):
             volumes = data['total_volumes']
     except KeyError:
         print('There is no prices available for currency.')
-    
-    trend(prices)
-    max_volume = 0
-    max_volume = max(x[1] for x in volumes) #high volumes
-    timestamp = [x[0] for x in volumes if x[1] == max_volume][0] # timestamp
-    volume_date = datetime.fromtimestamp(timestamp / 1000).date()
-    print(f"{args.currency.title()}'s highest trading volume was {round(max_volume, 2)}€ on {volume_date}.")
-    profit = profits(prices) # Get profitable days with prices
-    if profit is not None:
-        buy_date = datetime.utcfromtimestamp(
-            profit['buy'] / 1000).date()
-        sell_date = datetime.utcfromtimestamp(
-            profit['sell'] / 1000).date()
-        print(f"Buy {args.currency.title()} on {buy_date} and sell on {sell_date} to maximize profits.")
+
+    # get data
+    try:
+        url = f'https://api.coingecko.com/api/v3/coins/{args.currency.lower()}/market_chart/range?vs_currency=eur&from={args.start_date.timestamp()}&to={extended_date.timestamp() if a else args.end_date.timestamp()}'
+        r = requests.get(url)
+        data = json.loads(r.text)
+    except requests.exceptions.RequestException as ex:
+        raise SystemExit(ex)
+    #if start date is after current date
+    dt_utc = datetime.now(timezone.utc).timestamp()
+    dt_start = args.start_date.timestamp()
+
+    if dt_start > dt_utc:
+        print('There is no prices available for currency.')
     else:
-        print(f"You shouldn't buy or sell {args.currency.title()} on the selected time range.")
+        #volumes assing
+        volumes = data['total_volumes']
+        max_volume = 0
+        max_volume = max(x[1] for x in volumes) #high volumes
+        timestamp = [x[0] for x in volumes if x[1] == max_volume][0] # timestamp
+        volume_date = datetime.utcfromtimestamp(timestamp / 1000).date()
+        print(f"{args.currency.title()}'s highest trading volume was {round(max_volume, 2)}€ on {volume_date}.")
+        #prices assing
+        prices = data['prices']
+        #get trend
+        trend(prices)
+        profit = profits(prices) # Get profitable days with prices
+        if profit is not None:
+            buy_date = datetime.utcfromtimestamp(
+                profit['buy'] / 1000).date()
+            sell_date = datetime.utcfromtimestamp(
+                profit['sell'] / 1000).date()
+            print(f"Buy {args.currency.title()} on {buy_date} and sell on {sell_date} to maximize profits.")
+        else:
+            print(f"You shouldn't buy or sell {args.currency.title()} on the selected range.")
+    
     
 if __name__ == '__main__':
     
